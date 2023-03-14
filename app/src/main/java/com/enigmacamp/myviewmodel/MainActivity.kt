@@ -3,6 +3,7 @@ package com.enigmacamp.myviewmodel
 import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.os.PersistableBundle
 import android.util.Log
 import android.widget.Button
 import androidx.lifecycle.ViewModel
@@ -43,6 +44,17 @@ Untuk merubah data digunakan function setValue() & postValue(), bedanya postValu
 merubah value ketika proses nya di background thread, sedangkan setValue untuk merubah data ketika
 proses di main thread
 
+ViewModel yang berfungsi mempertahankan state ketika terjadi screen rotation,
+tidak bisa meng-handle data holder ketika terjadi killed system oleh android OS
+
+Kita bisa memanfaatkan SavedInstanceState untuk mempertahankan state di saat killed system
+simulasi process of death
+1. Klik home di emulator, aplikasi akan pause di background
+2. Buka terminal
+ adb shell am kill com.enigmacamp.myviewmodel
+3. Pastikan process aplikasi tidak ada
+ adb shell ps | grep enigma
+4. Masuk emulator lagi, jalankan ke foreground
  */
 class MainActivity : AppCompatActivity() {
     private lateinit var viewModel: MainActivityVM
@@ -52,8 +64,16 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
         initUI()
         initViewModel()
+        Log.d("Application ID", BuildConfig.APPLICATION_ID)
         subscribe()
+        viewModel.restoreState(savedInstanceState)
     }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        viewModel.saveState(outState)
+    }
+
 
     private fun initUI() {
         val btnSet = findViewById<Button>(R.id.btnSet)
