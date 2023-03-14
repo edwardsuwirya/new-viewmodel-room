@@ -22,6 +22,8 @@ screen rotation
 Bagaimana apabila class viewmodel kita memiliki dependency di constructor nya,
 kita harus membuat sebuah object yang meng-implementasi-kan ViewModelProvider.Factory interface
 
+Ada juga kegunaan viewmodel untuk sharing state antar fragment
+
  */
 class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
