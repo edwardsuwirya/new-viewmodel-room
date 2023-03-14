@@ -5,8 +5,8 @@ import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
 import android.widget.Button
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
-import androidx.lifecycle.ViewModelProviders
 
 /*
 Penggunaan umum yang biasanya dilakukan dengan viewmodel
@@ -19,6 +19,9 @@ ViewModel memiliki lifecycle nya sendiri, terlepas dari lifecycle Activity/Fragm
 dimana lifecycle dari viewmodel, tetap mempertahankan siklus hidupnya ketika terjadi
 screen rotation
 
+Bagaimana apabila class viewmodel kita memiliki dependency di constructor nya,
+kita harus membuat sebuah object yang meng-implementasi-kan ViewModelProvider.Factory interface
+
  */
 class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -28,8 +31,13 @@ class MainActivity : AppCompatActivity() {
 //        Cara yang salah melakukan create object viewmodel
 //        val viewModel = MainActivityVM()
 
-        val viewModel = ViewModelProvider(this)[MainActivityVM::class.java]
+//        val viewModel = ViewModelProvider(this)[MainActivityVM::class.java]
 
+        val viewModel = ViewModelProvider(this, object : ViewModelProvider.Factory {
+            override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                return MainActivityVM(3) as T
+            }
+        })[MainActivityVM::class.java]
         val btnSet = findViewById<Button>(R.id.btnSet)
         val btnGet = findViewById<Button>(R.id.btnGet)
 
@@ -38,8 +46,9 @@ class MainActivity : AppCompatActivity() {
         }
         btnGet.setOnClickListener {
             Log.d("Main-Activity", viewModel.totalBlogs.toString())
-            val intent = Intent(this, SecondActivity::class.java)
-            startActivity(intent)
+            viewModel.printStarRating()
+//            val intent = Intent(this, SecondActivity::class.java)
+//            startActivity(intent)
 //            finish() akan menyebabkan viewmodel di clear
 //            finish()
         }
