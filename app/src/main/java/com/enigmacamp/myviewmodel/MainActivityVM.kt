@@ -3,6 +3,7 @@ package com.enigmacamp.myviewmodel
 import android.os.Bundle
 import android.util.Log
 import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.enigmacamp.simpleviewmodel.ViewState
@@ -10,9 +11,20 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-class MainActivityVM(private val initialStarRating: Int) : ViewModel() {
+class MainActivityVM(
+    private val initialStarRating: Int,
+    private val prefRepo: SharedPrefRepository
+) : ViewModel() {
     var totalBlog: Int = 0
     var totalBlogsLiveData = MutableLiveData<ViewState>()
+
+    fun saveUserPref() {
+        prefRepo.put("isLoggedIn", "1")
+    }
+
+    fun getUserPref(): String {
+        return prefRepo.get("isLoggedIn") ?: ""
+    }
 
     fun printStarRating() {
         viewModelScope.launch(Dispatchers.IO) {

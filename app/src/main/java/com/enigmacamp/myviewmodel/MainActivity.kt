@@ -6,6 +6,7 @@ import android.os.Bundle
 import android.os.PersistableBundle
 import android.util.Log
 import android.widget.Button
+import androidx.lifecycle.SavedStateViewModelFactory
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import com.enigmacamp.simpleviewmodel.ViewStatus
@@ -55,18 +56,26 @@ simulasi process of death
 3. Pastikan process aplikasi tidak ada
  adb shell ps | grep enigma
 4. Masuk emulator lagi, jalankan ke foreground
+
+Untuk menyimpan data, yang sederhana (Key-Value) kita bisa menggunakan
+SharedPreferences
+Path shared preferences
+/data/data/com.enigmacamp.myviewmodel/shared_prefs
  */
 class MainActivity : AppCompatActivity() {
     private lateinit var viewModel: MainActivityVM
     private lateinit var btnGet: Button
+    private lateinit var prefRepo: SharedPrefRepository
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+        prefRepo = SharedPrefRepository(applicationContext)
         initUI()
         initViewModel()
         Log.d("Application ID", BuildConfig.APPLICATION_ID)
         subscribe()
         viewModel.restoreState(savedInstanceState)
+
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
@@ -81,13 +90,17 @@ class MainActivity : AppCompatActivity() {
 
         btnSet.setOnClickListener {
             viewModel.printStarRating()
+            viewModel.saveUserPref()
+            val isLoggedIn = viewModel.getUserPref()
+            Log.d("Is-LoggedIn", isLoggedIn)
         }
     }
 
     private fun initViewModel() {
+
         viewModel = ViewModelProvider(this, object : ViewModelProvider.Factory {
             override fun <T : ViewModel> create(modelClass: Class<T>): T {
-                return MainActivityVM(12) as T
+                return MainActivityVM(12, prefRepo) as T
             }
         })[MainActivityVM::class.java]
     }
