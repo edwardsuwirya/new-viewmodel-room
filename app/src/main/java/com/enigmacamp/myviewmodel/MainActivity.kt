@@ -7,6 +7,7 @@ import android.util.Log
 import android.widget.Button
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
+import com.enigmacamp.simpleviewmodel.ViewStatus
 
 /*
 Penggunaan umum yang biasanya dilakukan dengan viewmodel
@@ -24,36 +25,60 @@ kita harus membuat sebuah object yang meng-implementasi-kan ViewModelProvider.Fa
 
 Ada juga kegunaan viewmodel untuk sharing state antar fragment
 
+LiveData merupakan salah satu komponen jetpack di bagian arsitektur
+Sebuah class observable yang berfungsi sebagai data holder
+LiveData dapat menangkap perubahan lifecycle (dapat melakukan perubahan data, ketika terjadi
+perubahan lifecycle)
+
+Didalam livedata, ada 2 hal yang perlu diperhatikan
+1. Observer => melakukan perubahan data di UI
+2. LifecycleOwner => pemilik dari lifecycle, apakah itu activity / fragment
+
+Jika activity/fragment tidak aktif, maka oberserver tidak akan aktif
+
+Bisa beradaptasi ketika terjadi screen rotation
+
+Ada 2 jenis liveData, LiveData tidak bisa diubah value nya, MutableLiveData, bisa diubah value nya
+Untuk merubah data digunakan function setValue() & postValue(), bedanya postValue digunakan untuk
+merubah value ketika proses nya di background thread, sedangkan setValue untuk merubah data ketika
+proses di main thread
+
  */
 class MainActivity : AppCompatActivity() {
+    private lateinit var viewModel: MainActivityVM
+    private lateinit var btnGet: Button
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+        initUI()
+        initViewModel()
+        subscribe()
+    }
 
-//        Cara yang salah melakukan create object viewmodel
-//        val viewModel = MainActivityVM()
-
-//        val viewModel = ViewModelProvider(this)[MainActivityVM::class.java]
-
-        val viewModel = ViewModelProvider(this, object : ViewModelProvider.Factory {
-            override fun <T : ViewModel> create(modelClass: Class<T>): T {
-                return MainActivityVM(3) as T
-            }
-        })[MainActivityVM::class.java]
+    private fun initUI() {
         val btnSet = findViewById<Button>(R.id.btnSet)
-        val btnGet = findViewById<Button>(R.id.btnGet)
+        btnGet = findViewById(R.id.btnGet)
 
         btnSet.setOnClickListener {
-            viewModel.totalBlogs += 1
-        }
-        btnGet.setOnClickListener {
-            Log.d("Main-Activity", viewModel.totalBlogs.toString())
             viewModel.printStarRating()
-//            val intent = Intent(this, SecondActivity::class.java)
-//            startActivity(intent)
-//            finish() akan menyebabkan viewmodel di clear
-//            finish()
         }
+    }
 
+    private fun initViewModel() {
+        viewModel = ViewModelProvider(this, object : ViewModelProvider.Factory {
+            override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                return MainActivityVM(12) as T
+            }
+        })[MainActivityVM::class.java]
+    }
+
+    private fun subscribe() {
+        viewModel.totalBlogsLiveData.observe(this) {
+            when (it.status) {
+                ViewStatus.SUCCESS -> btnGet.text = "Star Rating ${it.data}"
+                ViewStatus.LOADING -> btnGet.text = "Loading..."
+                ViewStatus.ERROR -> btnGet.text = "Oops"
+            }
+        }
     }
 }
