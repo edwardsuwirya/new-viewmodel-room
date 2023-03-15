@@ -9,6 +9,9 @@ import android.widget.Button
 import androidx.lifecycle.SavedStateViewModelFactory
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
+import com.enigmacamp.myviewmodel.repository.BlogRepository
+import com.enigmacamp.myviewmodel.repository.data.AppDatabase
+import com.enigmacamp.myviewmodel.repository.data.dao.BlogDao
 import com.enigmacamp.simpleviewmodel.ViewStatus
 
 /*
@@ -61,11 +64,19 @@ Untuk menyimpan data, yang sederhana (Key-Value) kita bisa menggunakan
 SharedPreferences
 Path shared preferences
 /data/data/com.enigmacamp.myviewmodel/shared_prefs
+
+Room DB => ORM, database engine nya Sqlite
+Komponen nya
+1. Database => Untuk connection, konfigurasi
+2. Entities => mewakili table dalam database
+3. DAO => operasi CRUD nya (query, insert, delete, update)
+
  */
 class MainActivity : AppCompatActivity() {
     private lateinit var viewModel: MainActivityVM
     private lateinit var btnGet: Button
     private lateinit var prefRepo: SharedPrefRepository
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
