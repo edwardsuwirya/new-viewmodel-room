@@ -15,16 +15,12 @@ abstract class AppDatabase : RoomDatabase() {
         @Volatile
         private var INSTANCE: AppDatabase? = null
 
-        fun getDatabase(context: Context): AppDatabase {
-            return INSTANCE ?: synchronized(this) {
-                val instance = Room.databaseBuilder(
-                    context.applicationContext,
-                    AppDatabase::class.java,
-                    "simple_room"
-                ).build()
-                INSTANCE = instance
-                instance
-            }
-        }
+        @Synchronized
+        fun getDatabase(context: Context) = INSTANCE ?: Room.databaseBuilder(
+            context.applicationContext,
+            AppDatabase::class.java,
+            "simple_room"
+        )
+            .build().also { INSTANCE = it }
     }
 }
