@@ -1,12 +1,13 @@
 package com.enigmacamp.myviewmodel
 
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
+import android.util.Log
+import androidx.lifecycle.*
+import androidx.paging.PagingData
+import androidx.paging.cachedIn
 import com.enigmacamp.myviewmodel.repository.BlogRepository
 import com.enigmacamp.myviewmodel.repository.PostRepository
 import com.enigmacamp.myviewmodel.repository.data.entities.Blog
+import com.enigmacamp.myviewmodel.repository.network.models.response.Post
 import com.enigmacamp.simpleviewmodel.ViewState
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -27,13 +28,15 @@ class BlogActivityVM(
         viewModelScope.launch(Dispatchers.IO) {
             _postLiveData.postValue(ViewState.loading())
             try {
-                val result = postRepository.getPost()
-                _postLiveData.postValue(ViewState.success(result))
+                _postLiveData.postValue(ViewState.success(postRepository.getPost()))
             } catch (e: Exception) {
                 _postLiveData.postValue(ViewState.error(e.message))
             }
         }
     }
+
+    fun onGetAllPost() =
+        postRepository.getAllPost().cachedIn(viewModelScope)
 
     fun onGetBlog() = dbTrans {
         blogRepository.getBlogs()

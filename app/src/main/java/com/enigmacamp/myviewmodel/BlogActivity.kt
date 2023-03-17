@@ -7,14 +7,21 @@ import android.widget.Button
 import android.widget.TextView
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.lifecycleScope
+import androidx.paging.LoadState
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.enigmacamp.myviewmodel.repository.BlogRepository
 import com.enigmacamp.myviewmodel.repository.BlogRepositoryImpl
 import com.enigmacamp.myviewmodel.repository.PostRepository
 import com.enigmacamp.myviewmodel.repository.PostRepositoryImpl
 import com.enigmacamp.myviewmodel.repository.data.AppDatabase
 import com.enigmacamp.myviewmodel.repository.data.dao.BlogDao
+import com.enigmacamp.myviewmodel.repository.network.RetrofitInstance
 import com.enigmacamp.myviewmodel.util.db
 import com.enigmacamp.simpleviewmodel.ViewStatus
+import kotlinx.coroutines.launch
 
 class BlogActivity : AppCompatActivity() {
     private lateinit var viewModel: BlogActivityVM
@@ -23,19 +30,28 @@ class BlogActivity : AppCompatActivity() {
     private lateinit var blogDao: BlogDao
 
     private lateinit var tvResult: TextView
-    private lateinit var loadingFragment: LoadingFragment
+    private val adapter = PostPagerAdapter()
+
+    private lateinit var swipeContainer: SwipeRefreshLayout
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_blog)
         blogDao = db.blogDao()
         blogRepo = BlogRepositoryImpl(blogDao)
-        postRepo = PostRepositoryImpl()
+        postRepo = PostRepositoryImpl(RetrofitInstance.jsonPlaceholderApi)
         initUI()
         initViewModel()
         subscribe()
     }
 
     private fun initUI() {
+        swipeContainer = findViewById(R.id.swipeToRefresh)
+        swipeContainer.setOnRefreshListener {
+            adapter.refresh()
+            swipeContainer.isRefreshing = false
+        }
+
         val btnBlog = findViewById<Button>(R.id.btn_blog)
         val btnPost = findViewById<Button>(R.id.btn_post)
         tvResult = findViewById(R.id.tv_result)
@@ -45,9 +61,25 @@ class BlogActivity : AppCompatActivity() {
             viewModel.onGetBlog()
         }
         btnPost.setOnClickListener {
-            viewModel.onGetPost()
+//            viewModel.onGetPost()
+            lifecycleScope.launch {
+                viewModel.onGetAllPost().observe(this@BlogActivity) {
+                    Log.d("Activity", it.toString())
+                    adapter.submitData(lifecycle, it)
+                }
+            }
         }
-        loadingFragment = LoadingFragment.newInstance()
+        val rv = findViewById<RecyclerView>(R.id.recyclerview)
+        rv.layoutManager = LinearLayoutManager(this)
+        rv.adapter = adapter.apply {
+            addLoadStateListener {
+                if (it.refresh is LoadState.Loading) {
+                    showLoadingFragment()
+                } else {
+                    dismissLoadingFragment()
+                }
+            }
+        }
     }
 
     private fun initViewModel() {
@@ -59,11 +91,11 @@ class BlogActivity : AppCompatActivity() {
     }
 
     private fun showLoadingFragment() {
-        loadingFragment.show(supportFragmentManager, "dialog")
+        LoadingScreen.show(this, false)
     }
 
     private fun dismissLoadingFragment() {
-        loadingFragment.dismiss()
+        LoadingScreen.hide()
     }
 
     private fun subscribe() {
